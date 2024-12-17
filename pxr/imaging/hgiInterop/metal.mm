@@ -14,6 +14,7 @@
 #include "pxr/imaging/hgiMetal/hgi.h"
 
 #include "pxr/base/tf/diagnostic.h"
+#include "pxr/base/tf/stringUtils.h"
 #include "pxr/base/vt/value.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -62,10 +63,15 @@ _compileShader(
     // Determine if GLSL version 140 is supported by this context.
     //  We'll use this info to generate a GLSL shader source string
     //  with the proper version preprocessor string prepended
-    float  glLanguageVersion;
+    const char* glLanguageVersionString =
+        (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
+    const char* separator = strchr(glLanguageVersionString, ' ');
+    int versionStringLength = separator ?
+        (int)(separator - glLanguageVersionString) :
+        (int)strlen(glLanguageVersionString);
+    double glLanguageVersion = pxr::TfStringToDouble(
+        glLanguageVersionString, versionStringLength);
     
-    sscanf((char *)glGetString(GL_SHADING_LANGUAGE_VERSION), "%f",
-        &glLanguageVersion);
     GLchar const * const versionTemplate = "#version %d\n";
     
     // GL_SHADING_LANGUAGE_VERSION returns the version standard version form
