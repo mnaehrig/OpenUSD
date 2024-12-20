@@ -14,7 +14,6 @@
 #include "pxr/imaging/hgiMetal/hgi.h"
 
 #include "pxr/base/tf/diagnostic.h"
-#include "pxr/base/tf/stringUtils.h"
 #include "pxr/base/vt/value.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
@@ -63,23 +62,15 @@ _compileShader(
     // Determine if GLSL version 140 is supported by this context.
     //  We'll use this info to generate a GLSL shader source string
     //  with the proper version preprocessor string prepended
-    const char* glLanguageVersionString =
-        (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
-    const char* separator = strchr(glLanguageVersionString, ' ');
-    int versionStringLength = separator ?
-        (int)(separator - glLanguageVersionString) :
-        (int)strlen(glLanguageVersionString);
-    double glLanguageVersion = pxr::TfStringToDouble(
-        glLanguageVersionString, versionStringLength);
-    
+    int majorVersion = 0, minorVersion = 0;
+    sscanf((char *)glGetString(GL_SHADING_LANGUAGE_VERSION), "%d.%d",
+        &majorVersion, &minorVersion);
     GLchar const * const versionTemplate = "#version %d\n";
     
     // GL_SHADING_LANGUAGE_VERSION returns the version standard version form
     //  with decimals, but the GLSL version preprocessor directive simply
     //  uses integers (thus 1.10 should 110 and 1.40 should be 140, etc.)
-    //  We multiply the floating point number by 100 to get a proper
-    //  number for the GLSL preprocessor directive
-    GLuint version = 100 * glLanguageVersion;
+    GLuint version = 100 * majorVersion + minorVersion;
     
     // Prepend our vertex shader source string with the supported GLSL version
     // so the shader will work on ES, Legacy, and OpenGL 3.2 Core Profile
